@@ -1,0 +1,48 @@
+services:
+  # Infraestrutura
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: plataforma-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - plataforma-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: plataforma-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - plataforma-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: plataforma-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: PlataformaEducacional123!
+      MSSQL_PID: Express
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - plataforma-network
+
+networks:
+  plataforma-network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  redis_data:
+  sqlserver_data: 

@@ -1,0 +1,257 @@
+version: '3.8'
+
+services:
+  # Infraestrutura
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: plataforma-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: plataforma-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: plataforma-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: PlataformaEducacional123!
+      MSSQL_PID: Express
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P PlataformaEducacional123! -C -Q "SELECT 1"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Microserviços
+  auth-api:
+    build:
+      context: ./src/backend
+      dockerfile: auth-api/Dockerfile
+    container_name: plataforma-auth-api
+    ports:
+      - "5001:5001"
+      - "7001:7001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5001;http://+:7001
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
+      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - JwtSettings__Issuer=PlataformaEducacional
+      - JwtSettings__Audience=PlataformaEducacional
+      - JwtSettings__ExpiryMinutes=15
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  conteudo-api:
+    build:
+      context: ./src/backend
+      dockerfile: conteudo-api/Dockerfile
+    container_name: plataforma-conteudo-api
+    ports:
+      - "5002:5002"
+      - "7002:7002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5002;http://+:7002
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ConteudoDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
+      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - JwtSettings__Issuer=PlataformaEducacional
+      - JwtSettings__Audience=PlataformaEducacional
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  alunos-api:
+    build:
+      context: ./src/backend
+      dockerfile: alunos-api/Dockerfile
+    container_name: plataforma-alunos-api
+    ports:
+      - "5003:5003"
+      - "7003:7003"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5003;http://+:7003
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AlunosDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
+      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - JwtSettings__Issuer=PlataformaEducacional
+      - JwtSettings__Audience=PlataformaEducacional
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+      - ExternalApis__ConteudoApi=http://conteudo-api:7002
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  pagamentos-api:
+    build:
+      context: ./src/backend
+      dockerfile: pagamentos-api/Dockerfile
+    container_name: plataforma-pagamentos-api
+    ports:
+      - "5004:5004"
+      - "7004:7004"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5004;http://+:7004
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PagamentosDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
+      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - JwtSettings__Issuer=PlataformaEducacional
+      - JwtSettings__Audience=PlataformaEducacional
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  bff-api:
+    build:
+        context: ./src/backend
+        dockerfile: bff-api/Dockerfile
+    container_name: plataforma-bff-api
+    ports:
+      - "5000:5000"
+      - "7000:7000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5000;http://+:7000
+      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - JwtSettings__Issuer=PlataformaEducacional
+      - JwtSettings__Audience=PlataformaEducacional
+      - RedisSettings__ConnectionString=redis:6379
+      - ApiSettings__AuthApiUrl=http://auth-api:5001
+      - ApiSettings__ConteudoApiUrl=http://conteudo-api:5002
+      - ApiSettings__AlunosApiUrl=http://alunos-api:5003
+      - ApiSettings__PagamentosApiUrl=http://pagamentos-api:5004
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+      conteudo-api:
+        condition: service_healthy
+      alunos-api:
+        condition: service_healthy
+      pagamentos-api:
+        condition: service_healthy
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: plataforma-frontend
+    ports:
+      - "4200:80"
+    environment:
+      - API_URL=http://localhost:5000
+    depends_on:
+      bff-api:
+        condition: service_healthy
+    networks:
+      - plataforma-network
+
+networks:
+  plataforma-network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  redis_data:
+  sqlserver_data: 

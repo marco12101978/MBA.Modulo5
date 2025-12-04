@@ -1,0 +1,255 @@
+services:
+  # Infraestrutura
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: plataforma-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
+      RABBITMQ_NODE_TYPE: stats
+      RABBITMQ_NODE_PORT: 5672
+      RABBITMQ_NODENAME: rabbit@localhost
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: plataforma-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 5s
+
+  # SQL Server removido - usando SQLite em desenvolvimento
+
+  # Microserviços
+  auth-api:
+    build:
+      context: ./src/backend
+      dockerfile: auth-api/Dockerfile
+    container_name: plataforma-auth-api
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/auth-dev.db
+      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__Issuer=Auth.API
+      - JwtSettings__Audience=Auth.API.Users
+      - JwtSettings__ExpiryMinutes=120
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+      - RabbitMQ__VirtualHost=/
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:rw
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+
+  conteudo-api:
+    build:
+      context: ./src/backend
+      dockerfile: conteudo-api/Dockerfile
+    container_name: plataforma-conteudo-api
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5002
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/conteudo-dev.db
+      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__Issuer=Auth.API
+      - JwtSettings__Audience=Auth.API.Users
+      - AppSettings__AutenticacaoJwksUrl=http://auth-api:5001/jwks
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+      - RabbitMQ__VirtualHost=/
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:rw
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+
+  alunos-api:
+    build:
+      context: ./src/backend
+      dockerfile: alunos-api/Dockerfile
+    container_name: plataforma-alunos-api
+    ports:
+      - "5003:5003"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5003
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/alunos-dev.db
+      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__Issuer=Auth.API
+      - JwtSettings__Audience=Auth.API.Users
+      - ExternalApis__ConteudoApi=http://conteudo-api:5002
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+      - RabbitMQ__VirtualHost=/
+      - AppSettings__AutenticacaoJwksUrl=http://auth-api:5001/jwks
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+      conteudo-api:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:rw
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+
+  pagamentos-api:
+    build:
+      context: ./src/backend
+      dockerfile: pagamentos-api/Dockerfile
+    container_name: plataforma-pagamentos-api
+    ports:
+      - "5004:5004"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5004
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/pagamentos-dev.db
+      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__Issuer=Auth.API
+      - JwtSettings__Audience=Auth.API.Users
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+      - RabbitMQ__VirtualHost=/
+      - AppSettings__AutenticacaoJwksUrl=http://auth-api:5001/jwks
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:rw
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+
+  bff-api:
+    build:
+        context: ./src/backend
+        dockerfile: bff-api/Dockerfile
+    container_name: plataforma-bff-api
+    ports:
+      - "5000:5000"
+      - "7000:7000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5000;http://+:7000
+      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__Issuer=Auth.API
+      - JwtSettings__Audience=Auth.API.Users
+      - RedisSettings__ConnectionString=redis:6379
+      - ApiSettings__AuthApiUrl=http://auth-api:5001
+      - ApiSettings__ConteudoApiUrl=http://conteudo-api:5002
+      - ApiSettings__AlunosApiUrl=http://alunos-api:5003
+      - ApiSettings__PagamentosApiUrl=http://pagamentos-api:5004
+      - AppSettings__AutenticacaoJwksUrl=http://auth-api:5001/jwks
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-api:
+        condition: service_healthy
+      conteudo-api:
+        condition: service_healthy
+      alunos-api:
+        condition: service_healthy
+      pagamentos-api:
+        condition: service_healthy
+    networks:
+      - plataforma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: plataforma-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - bff-api
+    networks:
+      - plataforma-network
+
+networks:
+  plataforma-network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  redis_data: 
