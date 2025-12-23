@@ -7,11 +7,7 @@ Uma plataforma educacional moderna baseada em arquitetura de **microserviços**,
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue)
 ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3-orange)
 
-### Integrantes
-- Hugo Domynique
-- Jairo Azevedo
-- Jason Santos do Amaral
-- Karina Esparza
+### Integrante
 - Marco Aurelio Roque
 
 ## 📋 Índice
@@ -210,8 +206,8 @@ npm --version
 
 ### 1. Clonar o Repositório
 ```bash
-git clone https://github.com/jasonamaral/mba.modulo4.git
-cd mba.modulo4
+git clone https://github.com/marco12101978/MBA.Modulo5.git
+cd mba.modulo5
 ```
 
 ### 2. Executar o Sistema Completo
@@ -700,4 +696,4 @@ mba.modulo4/
 
 ## 📝 Licença
 
-Este projeto é para fins educacionais (MBA DevXpert - Módulo 4).
+Este projeto é para fins educacionais (MBA DevXpert - Módulo 5).
