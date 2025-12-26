@@ -38,8 +38,8 @@ jobs:
         run: >
           dotnet test ./src/backend/MBA.Modulo4.sln
           --no-build -c Release
-          --logger "trx;LogFileName=test-results.trx"
           /p:CollectCoverage=true
+          /p:CoverletOutput=./coverage/
           /p:CoverletOutputFormat=cobertura
           /p:Threshold=80
           /p:ThresholdType=line
