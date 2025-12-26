@@ -57,6 +57,7 @@ services:
 
   # Microserviços
   auth-api:
+    image: lelloimp/plataforma-auth-api:1.0.0
     build:
       context: ./src/backend
       dockerfile: auth-api/Dockerfile
@@ -89,6 +90,7 @@ services:
       retries: 3
 
   conteudo-api:
+    image: lelloimp/plataforma-conteudo-api:1.0.0
     build:
       context: ./src/backend
       dockerfile: conteudo-api/Dockerfile
@@ -124,6 +126,7 @@ services:
       retries: 3
 
   alunos-api:
+    image: lelloimp/plataforma-alunos-api:1.0.0
     build:
       context: ./src/backend
       dockerfile: alunos-api/Dockerfile
@@ -160,6 +163,7 @@ services:
       retries: 3
 
   pagamentos-api:
+    image: lelloimp/plataforma-pagamentos-api:1.0.0
     build:
       context: ./src/backend
       dockerfile: pagamentos-api/Dockerfile
@@ -195,6 +199,7 @@ services:
       retries: 3
 
   bff-api:
+    image: lelloimp/plataforma-bff-api:1.0.0
     build:
         context: ./src/backend
         dockerfile: bff-api/Dockerfile
@@ -233,6 +238,7 @@ services:
       retries: 3
 
   frontend:
+    image: lelloimp/plataforma-frontend-api:1.0.0
     build:
       context: ./src/frontend
       dockerfile: Dockerfile

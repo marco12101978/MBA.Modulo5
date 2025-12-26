@@ -1,0 +1,80 @@
+name: Build & Push (Docker Hub)
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]   # ex: v1.0.0
+  workflow_dispatch:
+
+env:
+  REGISTRY: docker.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth-api
+            image: lelloimp/plataforma-auth-api
+            context: ./src/backend
+            dockerfile: ./src/backend/auth-api/Dockerfile
+
+          - service: conteudo-api
+            image: lelloimp/plataforma-conteudo-api
+            context: ./src/backend
+            dockerfile: ./src/backend/conteudo-api/Dockerfile
+
+          - service: alunos-api
+            image: lelloimp/plataforma-alunos-api
+            context: ./src/backend
+            dockerfile: ./src/backend/alunos-api/Dockerfile
+
+          - service: pagamentos-api
+            image: lelloimp/plataforma-pagamentos-api
+            context: ./src/backend
+            dockerfile: ./src/backend/pagamentos-api/Dockerfile
+
+          - service: bff-api
+            image: lelloimp/plataforma-bff-api
+            context: ./src/backend
+            dockerfile: ./src/backend/bff-api/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker meta (tags/labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=ref,event=tag
+
+      - name: Build & Push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
