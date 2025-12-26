@@ -1,4 +1,4 @@
-name: CI (Testes Automatizados .NET com Cobertura e Publicação no Docker Hub)
+name: CI (Testes .NET + Cobertura + Relatório) + Docker Hub
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ env:
 
 jobs:
   tests:
-    name: Run tests (.NET) + Coverage >= 80% + HTML Report
+    name: Testes (.NET) + Cobertura mínima (80%) + Relatório HTML
     runs-on: ubuntu-latest
 
     steps:
@@ -31,40 +31,57 @@ jobs:
       - name: Build (.NET)
         run: dotnet build ./src/backend/MBA.Modulo4.sln --no-restore -c Release
 
-      - name: Test (.NET) + Coverage gate (min 80% lines)
+      # Gera cobertura via XPlat (Cobertura XML) em TestResults/**/coverage.cobertura.xml
+      - name: Testes (.NET) + Cobertura (XPlat)
         run: >
           dotnet test ./src/backend/MBA.Modulo4.sln
           --no-build -c Release
           --logger "trx;LogFileName=test-results.trx"
-          /p:CollectCoverage=true
-          /p:CoverletOutput=./coverage/
-          /p:CoverletOutputFormat=cobertura
-          /p:Threshold=80
-          /p:ThresholdType=line
-          /p:ThresholdStat=total
+          --collect:"XPlat Code Coverage"
 
-      - name: Install ReportGenerator
+      # Lê o arquivo Cobertura XML e valida se a cobertura total (linhas) >= 80%
+      - name: Validar cobertura mínima (80%)
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Filter "coverage.cobertura.xml"
+          if (-not $files -or $files.Count -eq 0) {
+            throw "Arquivo coverage.cobertura.xml não encontrado em TestResults. Verifique se o collector XPlat está disponível."
+          }
+
+          # Se houver mais de um, escolhe o primeiro (geralmente suficiente);
+          # Se quiser, dá pra agregar, mas aqui a meta é um gate simples e confiável.
+          $file = $files | Select-Object -First 1
+          Write-Host "Cobertura encontrada em: $($file.FullName)"
+
+          [xml]$xml = Get-Content $file.FullName
+          $rate = [double]$xml.coverage.'line-rate'
+          $percent = [math]::Round($rate * 100, 2)
+
+          Write-Host "Cobertura total (linhas): $percent%"
+
+          if ($percent -lt 80) {
+            throw "Cobertura abaixo do mínimo: $percent% (< 80%)."
+          }
+
+      - name: Instalar ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      - name: Generate coverage report (HTML)
+      - name: Gerar relatório de cobertura (HTML)
         run: |
-          # Coverlet (with CoverletOutput=./coverage/) commonly produces:
-          #   <test-project>/coverage/coverage.cobertura.xml
-          # Some setups may produce:
-          #   <test-project>/coverage.cobertura.xml
-          reportgenerator             -reports:"**/coverage/coverage.cobertura.xml;**/coverage.cobertura.xml"             -targetdir:coveragereport             -reporttypes:Html
+          reportgenerator             -reports:"**/TestResults/**/coverage.cobertura.xml"             -targetdir:coveragereport             -reporttypes:Html
 
-      - name: Upload coverage report (artifact)
+      - name: Upload do relatório (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coveragereport
 
   build-and-push:
-    name: Build & Push Images (Docker Hub)
+    name: Build & Push (Docker Hub)
     runs-on: ubuntu-latest
     needs: tests
 
+    # Publica só em push/tag ou manual (nunca em PR)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     strategy:
@@ -96,6 +113,7 @@ jobs:
             context: ./src/backend
             dockerfile: ./src/backend/bff-api/Dockerfile
 
+          # Publica o frontend (sem testes Angular)
           - service: frontend
             image: lelloimp/plataforma-frontend
             context: ./src/frontend
