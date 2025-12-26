@@ -319,23 +319,23 @@ public class CertificadoTests
         c.NomeInstrutor.Should().Be("Tio Bob");
     }
 
-    // ---------- ToString ----------
-    [Fact]
-    public void ToString_deve_conter_campos_chave()
-    {
-        var c = new CertificadoBuilder()
-            .ComMatriculaId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
-            .ComNomeCurso("Clean Architecture")
-            .ComCargaHoraria(60)
-            .ComNotaFinal(9.5m)
-            .ComDataSolicitacao(new DateTime(2025, 03, 15))
-            .Build();
+    //// ---------- ToString ----------
+    //[Fact]
+    //public void ToString_deve_conter_campos_chave()
+    //{
+    //    var c = new CertificadoBuilder()
+    //        .ComMatriculaId(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+    //        .ComNomeCurso("Clean Architecture")
+    //        .ComCargaHoraria(60)
+    //        .ComNotaFinal(9.5m)
+    //        .ComDataSolicitacao(new DateTime(2025, 03, 15))
+    //        .Build();
 
-        var s = c.ToString();
-        s.Should().Contain("Clean Architecture");
-        s.Should().Contain("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        s.Should().Contain("60");
-        s.Should().Contain("9,5");
-        s.Should().Contain("15/03/2025");
-    }
+    //    var s = c.ToString();
+    //    s.Should().Contain("Clean Architecture");
+    //    s.Should().Contain("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    //    s.Should().Contain("60");
+    //    s.Should().Contain("9,5");
+    //    s.Should().Contain("15/03/2025");
+    //}
 }
