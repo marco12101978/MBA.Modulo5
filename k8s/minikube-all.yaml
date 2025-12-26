@@ -1,0 +1,737 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plataforma
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: plataforma-secrets
+  namespace: plataforma
+type: Opaque
+stringData:
+  SA_PASSWORD: "PlataformaEducacional123!"
+  RABBIT_USER: "admin"
+  RABBIT_PASS: "admin123"
+  JWT_SECRET: "PlataformaEducacional123!SuperSecretKey2024@#$"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plataforma-config
+  namespace: plataforma
+data:
+  ASPNETCORE_ENVIRONMENT: "Docker"
+  JWT_ISSUER: "PlataformaEducacional"
+  JWT_AUDIENCE: "PlataformaEducacional"
+---
+# =========================
+# SQL Server (com PVC)
+# =========================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqlserver-pvc
+  namespace: plataforma
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sqlserver
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sqlserver
+  template:
+    metadata:
+      labels:
+        app: sqlserver
+    spec:
+      containers:
+        - name: sqlserver
+          image: mcr.microsoft.com/mssql/server:2022-latest
+          ports:
+            - containerPort: 1433
+          env:
+            - name: ACCEPT_EULA
+              value: "Y"
+            - name: MSSQL_PID
+              value: "Express"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: SA_PASSWORD
+          volumeMounts:
+            - name: sqlserver-data
+              mountPath: /var/opt/mssql
+          readinessProbe:
+            tcpSocket:
+              port: 1433
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 1433
+            initialDelaySeconds: 30
+            periodSeconds: 20
+      volumes:
+        - name: sqlserver-data
+          persistentVolumeClaim:
+            claimName: sqlserver-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sqlserver
+  namespace: plataforma
+spec:
+  selector:
+    app: sqlserver
+  ports:
+    - name: mssql
+      port: 1433
+      targetPort: 1433
+  type: ClusterIP
+---
+# =========================
+# RabbitMQ (com PVC)
+# =========================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-pvc
+  namespace: plataforma
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3-management
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_PASS
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+          readinessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: rabbitmq-data
+          persistentVolumeClaim:
+            claimName: rabbitmq-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: plataforma
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: mgmt
+      port: 15672
+      targetPort: 15672
+  type: ClusterIP
+---
+# =========================
+# Redis (com PVC)
+# =========================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: plataforma
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          args: ["--appendonly", "yes"]
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: plataforma
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+  type: ClusterIP
+---
+# =========================
+# AUTH API
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-api
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-api
+  template:
+    metadata:
+      labels:
+        app: auth-api
+    spec:
+      containers:
+        - name: auth-api
+          image: lelloimp/plataforma-auth-api:latest
+          ports:
+            - containerPort: 5001
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              value: "http://+:5001"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: SA_PASSWORD
+            - name: ConnectionStrings__DefaultConnection
+              value: "Server=sqlserver;Database=AuthDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: JWT_SECRET
+            - name: JwtSettings__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_ISSUER
+            - name: JwtSettings__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_AUDIENCE
+            - name: RabbitMQ__Host
+              value: "rabbitmq"
+            - name: RabbitMQ__Port
+              value: "5672"
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_USER
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_PASS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-api
+  namespace: plataforma
+spec:
+  selector:
+    app: auth-api
+  ports:
+    - name: http
+      port: 5001
+      targetPort: 5001
+  type: ClusterIP
+---
+# =========================
+# CONTEUDO API
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conteudo-api
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: conteudo-api
+  template:
+    metadata:
+      labels:
+        app: conteudo-api
+    spec:
+      containers:
+        - name: conteudo-api
+          image: lelloimp/plataforma-conteudo-api:latest
+          ports:
+            - containerPort: 5002
+            - containerPort: 7002
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              value: "http://+:5002;http://+:7002"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: SA_PASSWORD
+            - name: ConnectionStrings__DefaultConnection
+              value: "Server=sqlserver;Database=ConteudoDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: JWT_SECRET
+            - name: JwtSettings__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_ISSUER
+            - name: JwtSettings__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_AUDIENCE
+            - name: RabbitMQ__Host
+              value: "rabbitmq"
+            - name: RabbitMQ__Port
+              value: "5672"
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_USER
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_PASS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: conteudo-api
+  namespace: plataforma
+spec:
+  selector:
+    app: conteudo-api
+  ports:
+    - name: http-5002
+      port: 5002
+      targetPort: 5002
+    - name: http-7002
+      port: 7002
+      targetPort: 7002
+  type: ClusterIP
+---
+# =========================
+# ALUNOS API
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alunos-api
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alunos-api
+  template:
+    metadata:
+      labels:
+        app: alunos-api
+    spec:
+      containers:
+        - name: alunos-api
+          image: lelloimp/plataforma-alunos-api:latest
+          ports:
+            - containerPort: 5003
+            - containerPort: 7003
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              value: "http://+:5003;http://+:7003"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: SA_PASSWORD
+            - name: ConnectionStrings__DefaultConnection
+              value: "Server=sqlserver;Database=AlunosDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: JWT_SECRET
+            - name: JwtSettings__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_ISSUER
+            - name: JwtSettings__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_AUDIENCE
+            - name: RabbitMQ__Host
+              value: "rabbitmq"
+            - name: RabbitMQ__Port
+              value: "5672"
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_USER
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_PASS
+            - name: ExternalApis__ConteudoApi
+              value: "http://conteudo-api:7002"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alunos-api
+  namespace: plataforma
+spec:
+  selector:
+    app: alunos-api
+  ports:
+    - name: http-5003
+      port: 5003
+      targetPort: 5003
+    - name: http-7003
+      port: 7003
+      targetPort: 7003
+  type: ClusterIP
+---
+# =========================
+# PAGAMENTOS API
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pagamentos-api
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pagamentos-api
+  template:
+    metadata:
+      labels:
+        app: pagamentos-api
+    spec:
+      containers:
+        - name: pagamentos-api
+          image: lelloimp/plataforma-pagamentos-api:latest
+          ports:
+            - containerPort: 5004
+            - containerPort: 7004
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              value: "http://+:5004;http://+:7004"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: SA_PASSWORD
+            - name: ConnectionStrings__DefaultConnection
+              value: "Server=sqlserver;Database=PagamentosDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: JWT_SECRET
+            - name: JwtSettings__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_ISSUER
+            - name: JwtSettings__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_AUDIENCE
+            - name: RabbitMQ__Host
+              value: "rabbitmq"
+            - name: RabbitMQ__Port
+              value: "5672"
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_USER
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: RABBIT_PASS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pagamentos-api
+  namespace: plataforma
+spec:
+  selector:
+    app: pagamentos-api
+  ports:
+    - name: http-5004
+      port: 5004
+      targetPort: 5004
+    - name: http-7004
+      port: 7004
+      targetPort: 7004
+  type: ClusterIP
+---
+# =========================
+# BFF API
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bff-api
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bff-api
+  template:
+    metadata:
+      labels:
+        app: bff-api
+    spec:
+      containers:
+        - name: bff-api
+          image: lelloimp/plataforma-bff-api:latest
+          ports:
+            - containerPort: 5000
+            - containerPort: 7000
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              value: "http://+:5000;http://+:7000"
+            - name: JwtSettings__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: plataforma-secrets
+                  key: JWT_SECRET
+            - name: JwtSettings__Issuer
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_ISSUER
+            - name: JwtSettings__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: plataforma-config
+                  key: JWT_AUDIENCE
+            - name: RedisSettings__ConnectionString
+              value: "redis:6379"
+            - name: ApiSettings__AuthApiUrl
+              value: "http://auth-api:5001"
+            - name: ApiSettings__ConteudoApiUrl
+              value: "http://conteudo-api:5002"
+            - name: ApiSettings__AlunosApiUrl
+              value: "http://alunos-api:5003"
+            - name: ApiSettings__PagamentosApiUrl
+              value: "http://pagamentos-api:5004"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bff-api
+  namespace: plataforma
+spec:
+  selector:
+    app: bff-api
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
+---
+# =========================
+# FRONTEND (Angular via Nginx)
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: plataforma
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: lelloimp/plataforma-frontend:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: plataforma
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+---
+# =========================
+# INGRESS (plataforma.local)
+# /      -> frontend
+# /api/* -> bff-api:5000
+# =========================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plataforma-ingress
+  namespace: plataforma
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: plataforma.local
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: bff-api
+                port:
+                  number: 5000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
