@@ -25,21 +25,20 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore
-        run: dotnet restore
+      - name: Restore (.NET)
+        run: dotnet restore ./src/backend/MBA.Modulo4.sln
 
-      - name: Build
-        run: dotnet build --no-restore -c Release
+      - name: Build (.NET)
+        run: dotnet build ./src/backend/MBA.Modulo4.sln --no-restore -c Release
 
-      - name: Test
-        run: dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+      - name: Test (.NET)
+        run: dotnet test ./src/backend/MBA.Modulo4.sln --no-build -c Release --logger "trx;LogFileName=test-results.trx"
 
   build-and-push:
     name: Build & Push Images (Docker Hub)
     runs-on: ubuntu-latest
     needs: tests
 
-    # Só publica em push/tag (não em PR)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     strategy:
@@ -71,7 +70,6 @@ jobs:
             context: ./src/backend
             dockerfile: ./src/backend/bff-api/Dockerfile
 
-          # Publica o frontend (sem testes Angular)
           - service: frontend
             image: lelloimp/plataforma-frontend
             context: ./src/frontend
