@@ -1,17 +1,47 @@
-name: Build & Push (Docker Hub)
+name: CI (Tests .NET) + Docker Hub Publish
 
 on:
+  pull_request:
+    branches: [ "main" ]
   push:
     branches: [ "main" ]
-    tags: [ "v*" ]   # ex: v1.0.0
+    tags: [ "v*" ]
   workflow_dispatch:
 
 env:
   REGISTRY: docker.io
 
 jobs:
-  build-and-push:
+  tests:
+    name: Run tests (.NET)
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Test
+        run: dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+
+  build-and-push:
+    name: Build & Push Images (Docker Hub)
+    runs-on: ubuntu-latest
+    needs: tests
+
+    # Só publica em push/tag (não em PR)
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
     strategy:
       fail-fast: false
       matrix:
@@ -40,7 +70,8 @@ jobs:
             image: lelloimp/plataforma-bff-api
             context: ./src/backend
             dockerfile: ./src/backend/bff-api/Dockerfile
-            
+
+          # Publica o frontend (sem testes Angular)
           - service: frontend
             image: lelloimp/plataforma-frontend
             context: ./src/frontend
