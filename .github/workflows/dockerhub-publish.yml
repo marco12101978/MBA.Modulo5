@@ -40,6 +40,11 @@ jobs:
             image: lelloimp/plataforma-bff-api
             context: ./src/backend
             dockerfile: ./src/backend/bff-api/Dockerfile
+            
+          - service: frontend
+            image: lelloimp/plataforma-frontend
+            context: ./src/frontend
+            dockerfile: ./src/frontend/Dockerfile
 
     steps:
       - name: Checkout
