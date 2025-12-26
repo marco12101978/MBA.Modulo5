@@ -1,4 +1,4 @@
-name: CI (Tests .NET + Coverage Gate + Report) + Docker Hub Publish
+name: CI (Testes Automatizados .NET com Cobertura e Publicação no Docker Hub)
 
 on:
   pull_request:
@@ -48,7 +48,11 @@ jobs:
 
       - name: Generate coverage report (HTML)
         run: |
-          reportgenerator             -reports:**/coverage.cobertura.xml             -targetdir:coveragereport             -reporttypes:Html
+          # Coverlet (with CoverletOutput=./coverage/) commonly produces:
+          #   <test-project>/coverage/coverage.cobertura.xml
+          # Some setups may produce:
+          #   <test-project>/coverage.cobertura.xml
+          reportgenerator             -reports:"**/coverage/coverage.cobertura.xml;**/coverage.cobertura.xml"             -targetdir:coveragereport             -reporttypes:Html
 
       - name: Upload coverage report (artifact)
         uses: actions/upload-artifact@v4
