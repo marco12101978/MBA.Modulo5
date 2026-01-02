@@ -24,6 +24,7 @@ COPY ["conteudo-api/src/Conteudo.Application/Conteudo.Application.csproj", "cont
 COPY ["conteudo-api/src/Conteudo.Domain/Conteudo.Domain.csproj", "conteudo-api/src/Conteudo.Domain/"]
 COPY ["conteudo-api/src/Conteudo.Infrastructure/Conteudo.Infrastructure.csproj", "conteudo-api/src/Conteudo.Infrastructure/"]
 COPY ["building-blocks/core/Core.csproj", "building-blocks/core/"]
+COPY ["building-blocks/MessageBus/MessageBus.csproj", "building-blocks/MessageBus/"]
 
 # Restaurar dependências (camada cacheável)
 RUN dotnet restore "conteudo-api/src/Conteudo.API/Conteudo.API.csproj"

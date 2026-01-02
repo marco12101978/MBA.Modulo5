@@ -24,6 +24,7 @@ COPY ["bff-api/src/BFF.Application/BFF.Application.csproj", "bff-api/src/BFF.App
 COPY ["bff-api/src/BFF.Domain/BFF.Domain.csproj", "bff-api/src/BFF.Domain/"]
 COPY ["bff-api/src/BFF.Infrastructure/BFF.Infrastructure.csproj", "bff-api/src/BFF.Infrastructure/"]
 COPY ["building-blocks/core/Core.csproj", "building-blocks/core/"]
+COPY ["building-blocks/MessageBus/MessageBus.csproj", "building-blocks/MessageBus/"]
 
 # Restaurar dependências (camada cacheável)
 RUN dotnet restore "bff-api/src/BFF.API/BFF.API.csproj"

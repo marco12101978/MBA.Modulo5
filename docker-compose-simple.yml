@@ -7,8 +7,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
       RABBITMQ_DEFAULT_VHOST: /
       RABBITMQ_ERLANG_COOKIE: SWQOKODSQALRPCLNMEQG
       RABBITMQ_NODE_TYPE: stats
@@ -55,16 +55,16 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5001
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/auth-dev.db
-      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=Auth.API
       - JwtSettings__Audience=Auth.API.Users
       - JwtSettings__ExpiryMinutes=120
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
+      - RabbitMQ__Username=${RABBITMQ_DEFAULT_USER}
+      - RabbitMQ__Password=${RABBITMQ_DEFAULT_PASS}
       - RabbitMQ__VirtualHost=/
-      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=${RABBITMQ_DEFAULT_USER};password=${RABBITMQ_DEFAULT_PASS};publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -90,16 +90,16 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5002
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/conteudo-dev.db
-      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=Auth.API
       - JwtSettings__Audience=Auth.API.Users
       - AppSettings__AutenticacaoJwksUrl=http://auth-api:5001/jwks
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
+      - RabbitMQ__Username=${RABBITMQ_DEFAULT_USER}
+      - RabbitMQ__Password=${RABBITMQ_DEFAULT_PASS}
       - RabbitMQ__VirtualHost=/
-      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=${RABBITMQ_DEFAULT_USER};password=${RABBITMQ_DEFAULT_PASS};publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -127,17 +127,17 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5003
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/alunos-dev.db
-      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=Auth.API
       - JwtSettings__Audience=Auth.API.Users
       - ExternalApis__ConteudoApi=http://conteudo-api:5002
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
+      - RabbitMQ__Username=${RABBITMQ_DEFAULT_USER}
+      - RabbitMQ__Password=${RABBITMQ_DEFAULT_PASS}
       - RabbitMQ__VirtualHost=/
       - AppSettings__AutenticacaoJwksUrl=http://auth-api:5001/jwks
-      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
+      - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=${RABBITMQ_DEFAULT_USER};password=${RABBITMQ_DEFAULT_PASS};publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -167,13 +167,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5004
       - ConnectionStrings__DefaultConnection=Data Source=/app/data/pagamentos-dev.db
-      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=Auth.API
       - JwtSettings__Audience=Auth.API.Users
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__Port=5672
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
+      - RabbitMQ__Username=${RABBITMQ_DEFAULT_USER}
+      - RabbitMQ__Password=${RABBITMQ_DEFAULT_PASS}
       - RabbitMQ__VirtualHost=/
       - AppSettings__AutenticacaoJwksUrl=http://auth-api:5001/jwks
       - MessageQueueConnection__MessageBus=host=rabbitmq:5672;username=admin;password=admin123;publisherConfirms=true;timeout=120;requestedHeartbeat=60;prefetchCount=1
@@ -204,7 +204,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5000;http://+:7000
-      - JwtSettings__SecretKey=MinhaChaveSecretaSuperSegura123456789AbcDef
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=Auth.API
       - JwtSettings__Audience=Auth.API.Users
       - RedisSettings__ConnectionString=redis:6379
