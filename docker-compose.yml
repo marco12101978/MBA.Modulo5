@@ -9,8 +9,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -43,14 +43,14 @@ services:
       - "1433:1433"
     environment:
       ACCEPT_EULA: Y
-      SA_PASSWORD: PlataformaEducacional123!
+      SA_PASSWORD: ${SA_PASSWORD}
       MSSQL_PID: Express
     volumes:
       - sqlserver_data:/var/opt/mssql
     networks:
       - plataforma-network
     healthcheck:
-      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P PlataformaEducacional123! -C -Q "SELECT 1"
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ${SA_PASSWORD} -C -Q "SELECT 1"
       interval: 30s
       timeout: 10s
       retries: 3
@@ -68,9 +68,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5001;http://+:7001
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
-      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${SA_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDB;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=PlataformaEducacional
       - JwtSettings__Audience=PlataformaEducacional
       - JwtSettings__ExpiryMinutes=15
@@ -101,9 +101,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5002;http://+:7002
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ConteudoDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
-      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${SA_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ConteudoDB;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=PlataformaEducacional
       - JwtSettings__Audience=PlataformaEducacional
       - RabbitMQ__Host=rabbitmq
@@ -137,9 +137,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5003;http://+:7003
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AlunosDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
-      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${SA_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AlunosDB;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=PlataformaEducacional
       - JwtSettings__Audience=PlataformaEducacional
       - RabbitMQ__Host=rabbitmq
@@ -174,9 +174,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5004;http://+:7004
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=PlataformaEducacional123!
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PagamentosDB;User Id=sa;Password=PlataformaEducacional123!;TrustServerCertificate=True;
-      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${SA_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PagamentosDB;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=PlataformaEducacional
       - JwtSettings__Audience=PlataformaEducacional
       - RabbitMQ__Host=rabbitmq
@@ -210,7 +210,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5000;http://+:7000
-      - JwtSettings__SecretKey=PlataformaEducacional123!SuperSecretKey2024@#$
+      - JwtSettings__SecretKey=${JWT_SECRET}
       - JwtSettings__Issuer=PlataformaEducacional
       - JwtSettings__Audience=PlataformaEducacional
       - RedisSettings__ConnectionString=redis:6379
