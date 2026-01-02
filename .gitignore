@@ -4,6 +4,11 @@
 *.db
 *.db-shm
 *.db-wal
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.slnLaunch.user
 src/api_prototype1
 **/TestResults
 src/backend/tests/coverage-report
