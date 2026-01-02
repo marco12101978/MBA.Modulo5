@@ -1,6 +1,7 @@
 using Core.DomainObjects;
 using Core.DomainValidations;
 using Plataforma.Educacao.Core.Exceptions;
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace Alunos.Domain.Entities;
@@ -120,5 +121,18 @@ public class Certificado : Entidade
         validacao.DispararExcecaoDominioSeInvalido();
     }
 
-    public override string ToString() => $"Certificado do curso {NomeCurso} (matrícula {MatriculaCursoId}) com total de {CargaHoraria} horas e nota final {NotaFinal} solicitado em {DataSolicitacao:dd/MM/yyyy}";
+    public override string ToString()
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "Certificado do curso {0} (matrícula {1}) com total de {2} horas e nota final {3} solicitado em {4}",
+            NomeCurso,
+            MatriculaCursoId,
+            CargaHoraria,
+            NotaFinal, // decimal → 9.5
+            DataSolicitacao.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+        );
+    }
+
+
 }

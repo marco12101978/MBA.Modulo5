@@ -1,4 +1,5 @@
 using Alunos.Domain.Entities;
+using System.Globalization;
 
 namespace Alunos.Tests.Domains;
 public class CertificadoBuilder
@@ -34,4 +35,6 @@ public class CertificadoBuilder
             _nomeInstrutor
         );
     }
+
+ 
 }
