@@ -44,7 +44,6 @@
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.API'))">
     <!-- 🌐 PROJETOS DE API -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) OR 
