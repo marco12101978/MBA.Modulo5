@@ -1,5 +1,7 @@
 using Alunos.API.Configurations;
 using Alunos.API.Helpers;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using System.Diagnostics.CodeAnalysis;
 
 [ExcludeFromCodeCoverage]
@@ -12,6 +14,21 @@ public class Program
         builder.AddApiConfiguration();
         builder.Services.AddMessageBusConfiguration(builder.Configuration);
 
+
+        builder.Services.AddOpenTelemetry()
+            .WithMetrics(metrics =>
+            {
+                metrics
+                    .SetResourceBuilder(
+                        OpenTelemetry.Resources.ResourceBuilder.CreateDefault()
+                            .AddService(serviceName: builder.Environment.ApplicationName))
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation()
+                    .AddPrometheusExporter();
+            });
+
+
         var app = builder.Build();
         if (app.Environment.IsDevelopment())
         {
@@ -22,6 +39,9 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        app.MapPrometheusScrapingEndpoint();
+
 
         app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", DateTime = DateTime.UtcNow }))
             .WithName("HealthCheck")

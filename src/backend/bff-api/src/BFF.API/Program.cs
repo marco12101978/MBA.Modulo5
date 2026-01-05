@@ -1,5 +1,7 @@
 using BFF.API.Configuration;
 using BFF.API.Extensions;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using System.Diagnostics.CodeAnalysis;
 
 [ExcludeFromCodeCoverage]
@@ -8,6 +10,20 @@ internal class Program
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddOpenTelemetry()
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .SetResourceBuilder(
+                    OpenTelemetry.Resources.ResourceBuilder.CreateDefault()
+                        .AddService(serviceName: builder.Environment.ApplicationName))
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddPrometheusExporter();
+        });
+
 
         builder.AddApiConfiguration();
 
@@ -34,6 +50,9 @@ internal class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        app.MapPrometheusScrapingEndpoint();
+
         app.MapHealthChecks("/health");
 
         app.Run();

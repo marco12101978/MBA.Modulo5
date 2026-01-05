@@ -1,10 +1,15 @@
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using Pagamentos.API.Configuration;
 using Pagamentos.API.Configuration.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
 builder
+    .AddOpenTelemetry()
     .AddApiConfig()
     .AddCorsConfig()
     .AddSwaggerConfig()
@@ -36,6 +41,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapPrometheusScrapingEndpoint();
 
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", DateTime = DateTime.UtcNow }))
    .WithName("HealthCheck")
