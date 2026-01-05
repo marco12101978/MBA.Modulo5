@@ -7,6 +7,8 @@ using Auth.Infrastructure.Data;
 using Core.Utils;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using System.Diagnostics.CodeAnalysis;
 
 [ExcludeFromCodeCoverage]
@@ -19,6 +21,19 @@ internal class Program
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.ListenAnyIP(5001);
+        });
+
+        builder.Services.AddOpenTelemetry()
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .SetResourceBuilder(
+                    OpenTelemetry.Resources.ResourceBuilder.CreateDefault()
+                        .AddService(serviceName: builder.Environment.ApplicationName))
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddPrometheusExporter();
         });
 
         builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
@@ -58,7 +73,9 @@ internal class Program
             });
         });
 
+
         builder.Services.AddHealthChecks();
+
 
         var app = builder.Build();
 
@@ -78,6 +95,8 @@ internal class Program
         app.UseAuthorization();
 
         app.MapControllers();
+
+        app.MapPrometheusScrapingEndpoint();
 
         app.MapHealthChecks("/health");
 
