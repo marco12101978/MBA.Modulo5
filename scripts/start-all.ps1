@@ -397,8 +397,21 @@ docker-compose -f $composeFile up -d frontend
 Write-Host "   Aguardando Frontend inicializar..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10
 
+
 Write-Host ""
-Write-Host "=== ETAPA 7: VERIFICAÇÃO FINAL ===" -ForegroundColor Yellow
+Write-Host "=== ETAPA 7: MONITORAMENTO ===" -ForegroundColor Yellow
+
+Write-Host "1. Iniciando Plataforma + Monitoramento (Prometheus/Grafana)..." -ForegroundColor Blue
+docker-compose -f $composeFile -f docker-compose-monitoring.yml up -d
+
+
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "Falha ao subir os containers. Veja o log acima." -ForegroundColor Red
+}
+
+
+Write-Host ""
+Write-Host "=== ETAPA 8: VERIFICAÇÃO FINAL ===" -ForegroundColor Yellow
 
 # Verificação final dos bancos SQLite
 Write-Host "Verificacao final dos bancos SQLite..." -ForegroundColor Blue
@@ -422,12 +435,15 @@ for ($i = 0; $i -lt $allContainers.Count; $i++) {
     }
 }
 
+
+
+
 Write-Host ""
 Write-Host "Sistema iniciado com sucesso!" -ForegroundColor Green
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host "URLs de Acesso:" -ForegroundColor White
 Write-Host ""
-Write-Host "   Frontend:           http://localhost:4200" -ForegroundColor Cyan
+Write-Host "   Frontend:          http://localhost:4200" -ForegroundColor Cyan
 Write-Host "   BFF API:           http://localhost:5000" -ForegroundColor Cyan
 Write-Host "   Auth API:          http://localhost:5001" -ForegroundColor Cyan
 Write-Host "   Conteudo API:      http://localhost:5002" -ForegroundColor Cyan
@@ -437,7 +453,9 @@ Write-Host ""
 Write-Host "Infraestrutura:" -ForegroundColor White
 Write-Host ""
 Write-Host "   RabbitMQ:          http://localhost:15672 (admin/admin123)" -ForegroundColor Magenta
-Write-Host "   Redis:             localhost:6379" -ForegroundColor Red
+Write-Host "   Redis:             http://localhost:6379" -ForegroundColor Red
+Write-Host "   Prometheus:        http://localhost:9090" -ForegroundColor Green
+Write-Host "   Grafana:           http://localhost:3000  (user: admin / senha: admin ou $env:GRAFANA_ADMIN_PASSWORD)" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Banco de Dados (SQLite):" -ForegroundColor White
 Write-Host ""
@@ -463,6 +481,7 @@ Write-Host "5. Pagamentos API" -ForegroundColor White
 Write-Host "6. Conteudo API" -ForegroundColor White
 Write-Host "7. BFF API" -ForegroundColor White
 Write-Host "8. Frontend" -ForegroundColor White
-Write-Host ""
+Write-Host "9. Prometheus/Grafana" -ForegroundColor White
+
 Write-Host "IMPORTANTE: Todos os arquivos SQLite foram removidos e recriados para evitar corrupção!" -ForegroundColor Yellow
 Write-Host "Se ainda houver problemas, verifique as permissões da pasta 'data' e execute como administrador." -ForegroundColor Yellow
