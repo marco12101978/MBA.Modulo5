@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Identity;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 [ExcludeFromCodeCoverage]
 internal class Program
@@ -35,6 +37,8 @@ internal class Program
                 .AddRuntimeInstrumentation()
                 .AddPrometheusExporter();
         });
+
+        builder.Services.AddHealthChecks().AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" });
 
         builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
@@ -96,9 +100,24 @@ internal class Program
 
         app.MapControllers();
 
-        app.MapPrometheusScrapingEndpoint();
+        app.MapPrometheusScrapingEndpoint("/metrics");
 
-        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/health/live", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("live")
+        });
+
+        app.MapHealthChecks("/health/ready", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("ready")
+        });
+
+        app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", DateTime = DateTime.UtcNow }))
+            .WithName("HealthCheck")
+            .WithOpenApi();
+
+
+
 
         using (var scope = app.Services.CreateScope())
         {

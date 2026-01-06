@@ -308,13 +308,13 @@ spec:
                   key: RABBIT_PASS
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 5001
             initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: 5001
             initialDelaySeconds: 30
             periodSeconds: 20
@@ -403,7 +403,7 @@ spec:
                   key: RABBIT_PASS
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 7002
             initialDelaySeconds: 20
             periodSeconds: 10
@@ -497,7 +497,7 @@ spec:
               value: "http://conteudo-api:7002"
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 5003
             initialDelaySeconds: 20
             periodSeconds: 10
@@ -589,7 +589,7 @@ spec:
                   key: RABBIT_PASS
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 5004
             initialDelaySeconds: 20
             periodSeconds: 10
@@ -670,7 +670,7 @@ spec:
               value: "http://pagamentos-api:5004"
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 5000
             initialDelaySeconds: 20
             periodSeconds: 10

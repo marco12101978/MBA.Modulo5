@@ -3,6 +3,8 @@ using BFF.API.Extensions;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 [ExcludeFromCodeCoverage]
 internal class Program
@@ -24,6 +26,7 @@ internal class Program
                 .AddPrometheusExporter();
         });
 
+        builder.Services.AddHealthChecks().AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" });
 
         builder.AddApiConfiguration();
 
@@ -51,9 +54,22 @@ internal class Program
         app.UseAuthorization();
         app.MapControllers();
 
-        app.MapPrometheusScrapingEndpoint();
+        app.MapPrometheusScrapingEndpoint("/metrics");
 
-        app.MapHealthChecks("/health");
+        app.MapHealthChecks("/health/live", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("live")
+        });
+
+        app.MapHealthChecks("/health/ready", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("ready")
+        });
+
+
+        app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", DateTime = DateTime.UtcNow }))
+            .WithName("HealthCheck")
+            .WithOpenApi();
 
         app.Run();
     }

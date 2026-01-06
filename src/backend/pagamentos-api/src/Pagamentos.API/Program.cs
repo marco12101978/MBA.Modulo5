@@ -1,12 +1,9 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
 using Pagamentos.API.Configuration;
 using Pagamentos.API.Configuration.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
 
 builder
     .AddOpenTelemetry()
@@ -18,7 +15,8 @@ builder
     .AddJwtConfiguration()
     .AddMapsterConfiguration()
     .AddMediatrConfig()
-    .AddDependencyInjectionConfig();
+    .AddDependencyInjectionConfig()
+    .AddHealthChecks();
 
 var app = builder.Build();
 
@@ -42,11 +40,22 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapPrometheusScrapingEndpoint();
+app.MapPrometheusScrapingEndpoint("/metrics");
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = r => r.Tags.Contains("live")
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = r => r.Tags.Contains("ready")
+});
+
 
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", DateTime = DateTime.UtcNow }))
-   .WithName("HealthCheck")
-   .WithOpenApi();
+    .WithName("HealthCheck")
+    .WithOpenApi();
 
 app.UseDbMigrationHelper();
 
