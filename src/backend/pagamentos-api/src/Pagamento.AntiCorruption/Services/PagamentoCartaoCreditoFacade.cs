@@ -14,7 +14,7 @@ namespace Pagamento.AntiCorruption.Services
             var encriptionKey = configManager.GetValue("encriptionKey");
 
             var serviceKey = payPalGateway.GetPayPalServiceKey(apiKey, encriptionKey);
-            var cardHashKey = payPalGateway.GetCardHashKey(serviceKey, pagamento.NumeroCartao);
+            var cardHashKey = payPalGateway.GetCardHashKey(serviceKey, pagamento.ObterNumeroCartao("X2pt0"));
 
             var pagamentoResult = payPalGateway.CommitTransaction(cardHashKey, cobrancaCurso.Id.ToString(), pagamento.Valor);
 

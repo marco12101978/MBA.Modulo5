@@ -1,6 +1,7 @@
 using Core.Mediator;
 using Core.Messages;
 using Core.Messages.Integration;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Pagamentos.Domain.Entities;
 using Pagamentos.Domain.Enum;
 using Pagamentos.Domain.Interfaces;
@@ -20,16 +21,14 @@ namespace Pagamentos.Domain.Services
                 Valor = pagamentoAnuidade.Total
             };
 
-            var pagamento = new Pagamento
-            {
-                Valor = pagamentoAnuidade.Total,
-                NomeCartao = pagamentoAnuidade.NomeCartao,
-                NumeroCartao = pagamentoAnuidade.NumeroCartao,
-                ExpiracaoCartao = pagamentoAnuidade.ExpiracaoCartao,
-                CvvCartao = pagamentoAnuidade.CvvCartao,
-                CobrancaCursoId = pagamentoAnuidade.CursoId,
-                AlunoId = pagamentoAnuidade.ClienteId
-            };
+            var pagamento = new Pagamento();
+            pagamento.Valor = pagamentoAnuidade.Total;
+            pagamento.NomeCartao = pagamentoAnuidade.NomeCartao;
+            pagamento.DefinirNumeroCartao(pagamentoAnuidade.NumeroCartao, "X2pt0");
+            pagamento.ExpiracaoCartao = pagamentoAnuidade.ExpiracaoCartao;
+            pagamento.DefinirNumeroCVV(pagamentoAnuidade.CvvCartao, "X2pt0");
+            pagamento.CobrancaCursoId = cobranca.Id;
+            pagamento.AlunoId = cobranca.Id;
 
             var transacao = pagamentoCartaoCreditoFacade.RealizarPagamento(cobranca, pagamento);
 

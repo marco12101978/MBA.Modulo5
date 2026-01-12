@@ -22,16 +22,20 @@ public class PagamentoBuilder
     public PagamentoBuilder ComCvv(string v) { _cvvCartao = v; return this; }
 
     public Domain.Entities.Pagamento Build()
-        => new Domain.Entities.Pagamento
+    {
+        var _pagamento = new Domain.Entities.Pagamento
         {
             CobrancaCursoId = _cobrancaCursoId,
             AlunoId = _alunoId,
             Status = _status,
             Valor = _valor,
             NomeCartao = _nomeCartao,
-            NumeroCartao = _numeroCartao,
             ExpiracaoCartao = _expiracaoCartao,
-            CvvCartao = _cvvCartao,
-            // Transacao permanece null por padrão (tipo não fornecido aqui)
         };
+
+        _pagamento.DefinirNumeroCartao(_numeroCartao, "X2pt0");
+        _pagamento.DefinirNumeroCVV(_cvvCartao, "X2pt0");
+
+        return _pagamento;
+    }
 }

@@ -24,9 +24,9 @@ public class PagamentoTests
         p.Status.Should().Be("Criado");
         p.Valor.Should().Be(250.75m);
         p.NomeCartao.Should().Be("Fulano de Tal");
-        p.NumeroCartao.Should().Be("4111111111111111");
+        p.ObterNumeroCartao("X2pt0").Should().Be("4111111111111111");
         p.ExpiracaoCartao.Should().Be("12/2030");
-        p.CvvCartao.Should().Be("123");
+        p.ObterNumeroCVV("X2pt0").Should().Be("123");
         p.Transacao.Should().BeNull(); // padrão atual
     }
 
@@ -48,13 +48,13 @@ public class PagamentoTests
         var p = new PagamentoBuilder().Build();
 
         p.NomeCartao = "Ciclano";
-        p.NumeroCartao = "5555444433331111";
+        p.DefinirNumeroCartao("5555444433331111", "X2pt0");
         p.ExpiracaoCartao = "01/2031";
-        p.CvvCartao = "999";
+        p.DefinirNumeroCVV("999", "X2pt0");
 
         p.NomeCartao.Should().Be("Ciclano");
-        p.NumeroCartao.Should().Be("5555444433331111");
+        p.ObterNumeroCartao("X2pt0").Should().Be("5555444433331111");
         p.ExpiracaoCartao.Should().Be("01/2031");
-        p.CvvCartao.Should().Be("999");
+        p.ObterNumeroCVV("X2pt0").Should().Be("999");
     }
 }

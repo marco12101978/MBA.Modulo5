@@ -27,17 +27,22 @@ public class PagamentoRepositoryTests : IDisposable
         Guid? alunoId = null,
         string status = "Criado",
         decimal valor = 123.45m)
-    => new()
     {
-        CobrancaCursoId = cobrancaId ?? Guid.NewGuid(),
-        AlunoId = alunoId ?? Guid.NewGuid(),
-        Status = status,
-        Valor = valor,
-        NomeCartao = "Fulano",
-        NumeroCartao = "4111111111111111",
-        ExpiracaoCartao = "12/2030",
-        CvvCartao = "123"
-    };
+        var _pagamento = new Domain.Entities.Pagamento
+        {
+            CobrancaCursoId = cobrancaId ?? Guid.NewGuid(),
+            AlunoId = alunoId ?? Guid.NewGuid(),
+            Status = status,
+            Valor = valor,
+            NomeCartao = "Fulano",
+            ExpiracaoCartao = "12/2030",
+        };
+
+        _pagamento.DefinirNumeroCartao("4111111111111111", "X2pt0");
+        _pagamento.DefinirNumeroCVV("123", "X2pt0");
+
+        return _pagamento;
+    }
 
     private static Transacao NovaTransacao(Guid pagamentoId, Guid? cobrancaId = null, decimal total = 123.45m, int status = 1)
     => new()
