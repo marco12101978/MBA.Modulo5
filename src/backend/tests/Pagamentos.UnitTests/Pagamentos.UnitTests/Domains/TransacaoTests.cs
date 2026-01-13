@@ -55,10 +55,11 @@ public class TransacaoTests
             Status = "Aprovado",
             Valor = 123.45m,
             NomeCartao = "Fulano",
-            NumeroCartao = "4111111111111111",
             ExpiracaoCartao = "12/2030",
-            CvvCartao = "123"
         };
+
+        pagamento.DefinirNumeroCartao("4111111111111111", "X2pt0");
+        pagamento.DefinirNumeroCVV("123", "X2pt0");
 
         var t = new TransacaoBuilder()
             .ComPagamento(pagamento) // também sincroniza PagamentoId = pagamento.Id

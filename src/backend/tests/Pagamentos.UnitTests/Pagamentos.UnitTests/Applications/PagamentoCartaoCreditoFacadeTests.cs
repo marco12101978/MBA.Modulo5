@@ -16,13 +16,16 @@ public class PagamentoCartaoCreditoFacadeTests
         config.Setup(c => c.GetValue("encriptionKey")).Returns("EK");
 
         gateway.Setup(g => g.GetPayPalServiceKey("AK", "EK")).Returns("svc");
-        gateway.Setup(g => g.GetCardHashKey("svc", "4111111111111111")).Returns("hash");
+        gateway.Setup(g => g.GetCardHashKey("svc", "1111222233334444")).Returns("hash");
         gateway.Setup(g => g.CommitTransaction("hash", It.IsAny<string>(), 100m)).Returns(true);
 
         var facade = new PagamentoCartaoCreditoFacade(gateway.Object, config.Object);
 
         var cobranca = new CobrancaCurso { Id = Guid.NewGuid(), Valor = 100m };
-        var pagamento = new Domain.Entities.Pagamento { NumeroCartao = "4111111111111111", Valor = 100m };
+
+        var pagamento = new Domain.Entities.Pagamento();
+        pagamento.Valor = 100m;
+        pagamento.DefinirNumeroCartao("1111222233334444", "X2pt0");
 
         var tx = facade.RealizarPagamento(cobranca, pagamento);
 
@@ -49,8 +52,11 @@ public class PagamentoCartaoCreditoFacadeTests
 
         var facade = new PagamentoCartaoCreditoFacade(gateway.Object, config.Object);
 
-        var tx = facade.RealizarPagamento(new CobrancaCurso { Id = Guid.NewGuid(), Valor = 50m },
-                                          new Domain.Entities.Pagamento { NumeroCartao = "5555", Valor = 50m });
+        var pagamento = new Domain.Entities.Pagamento();
+        pagamento.Valor = 50m;
+        pagamento.DefinirNumeroCartao("1111222233334444", "X2pt0");
+
+        var tx = facade.RealizarPagamento(new CobrancaCurso { Id = Guid.NewGuid(), Valor = 50m }, pagamento);
 
         tx.StatusTransacao.Should().Be(StatusTransacao.Recusado);
     }
