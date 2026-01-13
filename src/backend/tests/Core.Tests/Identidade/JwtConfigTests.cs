@@ -45,8 +45,7 @@ public class JwtConfigTests
         services.AddJwtConfiguration(config);
         var provider = services.BuildServiceProvider();
 
-        // Só validar que o pipeline registrou handlers/serviços de auth
-        provider.GetService<Microsoft.AspNetCore.Authentication.IAuthenticationService>()
+        provider.GetService<IAuthenticationService>()
             .Should().NotBeNull();
     }
 
@@ -102,7 +101,7 @@ public class JwtConfigTests
         services.AddJwtConfiguration(config);
         var provider = services.BuildServiceProvider();
 
-        provider.GetService<Microsoft.AspNetCore.Authentication.IAuthenticationSchemeProvider>()
+        provider.GetService<IAuthenticationSchemeProvider>()
             .Should().NotBeNull();
     }
 
@@ -133,7 +132,7 @@ public class JwtConfigTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AppSettings:"] = "" 
+                ["AppSettings:"] = ""
             })
             .Build();
 
@@ -144,7 +143,7 @@ public class JwtConfigTests
     }
 
     [Fact]
-    public void AddJwtConfiguration_deve_registrar_JwtBearer_scheme_quando_config_ok()
+    public async Task AddJwtConfiguration_deve_registrar_JwtBearer_scheme_quando_config_ok()
     {
         var services = new ServiceCollection();
 
@@ -163,7 +162,7 @@ public class JwtConfigTests
         var provider = services.BuildServiceProvider();
 
         var schemeProvider = provider.GetRequiredService<IAuthenticationSchemeProvider>();
-        var scheme = schemeProvider.GetSchemeAsync(JwtBearerDefaults.AuthenticationScheme).GetAwaiter().GetResult();
+        var scheme = await schemeProvider.GetSchemeAsync(JwtBearerDefaults.AuthenticationScheme);
 
         scheme.Should().NotBeNull();
         scheme!.Name.Should().Be(JwtBearerDefaults.AuthenticationScheme);
@@ -172,7 +171,6 @@ public class JwtConfigTests
     [Fact]
     public void AddJwtConfiguration_deve_configurar_JwtBearerOptions_com_JwksOptions()
     {
-        // Arrange
         var services = new ServiceCollection();
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -184,11 +182,9 @@ public class JwtConfigTests
             })
             .Build();
 
-        // Act
         services.AddJwtConfiguration(config);
         var sp = services.BuildServiceProvider();
 
-        // Assert - puxa as options do JwtBearer e garante que o delegate rodou
         var optionsMonitor = sp.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
         var opt = optionsMonitor.Get(JwtBearerDefaults.AuthenticationScheme);
 
