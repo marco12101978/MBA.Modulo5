@@ -49,6 +49,58 @@ public class CursoQueryServiceTests
         await _repo.Received(1).ObterPorCategoriaIdAsync(cat, false);
     }
 
-    // Observação: não testei ObterTodos(CursoFilter) porque o tipo de filtro/PagedResult está em outro pacote.
-    // Quando você disponibilizar essas classes no projeto de testes, adiciono um caso validando paginação e mapeamento.
+    [Fact]
+    public async Task ObterPorId_deve_retornar_null_quando_repositorio_retornar_null()
+    {
+        var id = Guid.NewGuid();
+        _repo.ObterPorIdAsync(id, false).Returns((Curso?)null);
+
+        var dto = await _svc.ObterPorIdAsync(id, includeAulas: false);
+
+        dto.Should().BeNull();
+        await _repo.Received(1).ObterPorIdAsync(id, false);
+    }
+
+    [Fact]
+    public async Task ObterPorCategoriaId_deve_respeitar_includeAulas_true()
+    {
+        var cat = Guid.NewGuid();
+        var lista = new List<Curso> { Novo("C1", cat) };
+        _repo.ObterPorCategoriaIdAsync(cat, true).Returns(lista);
+
+        var dtos = (await _svc.ObterPorCategoriaIdAsync(cat, includeAulas: true)).ToList();
+
+        dtos.Should().HaveCount(1);
+        dtos[0].Nome.Should().Be("C1");
+        await _repo.Received(1).ObterPorCategoriaIdAsync(cat, true);
+    }
+
+    [Fact]
+    public async Task ObterTodos_deve_mapear_pagedresult_e_itens()
+    {
+        var filter = new Core.Communication.Filters.CursoFilter { PageIndex = 2, PageSize = 5, Query = "ddd" };
+
+        var c1 = Novo("C1");
+        var c2 = Novo("C2");
+
+        var paged = new Core.Communication.PagedResult<Curso>
+        {
+            PageIndex = 2,
+            PageSize = 5,
+            TotalResults = 12,
+            Query = "ddd",
+            Items = new[] { c1, c2 }
+        };
+
+        _repo.ObterTodosAsync(filter).Returns(paged);
+
+        var dto = await _svc.ObterTodosAsync(filter);
+
+        dto.PageIndex.Should().Be(2);
+        dto.PageSize.Should().Be(5);
+        dto.TotalResults.Should().Be(12);
+        dto.Query.Should().Be("ddd");
+        dto.Items.Select(x => x.Nome).Should().BeEquivalentTo("C1", "C2");
+        await _repo.Received(1).ObterTodosAsync(filter);
+    }
 }
