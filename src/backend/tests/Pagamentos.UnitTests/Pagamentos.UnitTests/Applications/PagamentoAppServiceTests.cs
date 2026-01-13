@@ -36,4 +36,21 @@ public class PagamentoAppServiceTests
         vms.Should().HaveCount(2);
         repo.Verify(r => r.ObterTodos(), Times.Once);
     }
+
+    [Fact]
+    public void Dispose_deve_chamar_Dispose_do_repo_quando_nao_nulo_e_nao_deve_lancar_quando_nulo()
+    {
+        var repo = new Mock<IPagamentoRepository>();
+        var svc = new PagamentoAppService(repo.Object);
+
+        svc.Dispose();
+
+        repo.Verify(r => r.Dispose(), Times.Once);
+
+        var svcComRepoNulo = new PagamentoAppService(null!);
+
+        Action act = () => svcComRepoNulo.Dispose();
+
+        act.Should().NotThrow();
+    }
 }

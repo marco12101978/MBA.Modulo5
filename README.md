@@ -406,10 +406,50 @@ dotnet test src/backend/alunos-api/tests/Alunos.IntegrationTests
 
 ## 📊 Cobertura de Testes
 
-![Line Coverage](https://img.shields.io/badge/Line%20Coverage-94.8%25-brightgreen)
-![Branch Coverage](https://img.shields.io/badge/Branch%20Coverage-83.5%25-blue)
+Este projeto possui uma suíte consistente de testes unitários, com foco em regras de negócio, serviços de aplicação e repositórios, seguindo boas práticas de Clean Architecture e DDD.
 
-![Relatório de Cobertura](https://raw.githubusercontent.com/jasonamaral/mba.modulo4/main/src/tests/coverage-report/Coverage.jpg)
+
+📊 Métricas Gerais
+
+Line Coverage: 88,6%
+
+Branch Coverage: 82% ✅
+
+Method Coverage: 95%
+
+Fully Covered Methods: 92,1%
+
+A meta mínima de 80% de Branch Coverage foi atingida e superada.
+
+
+
+📦 Destaques de Cobertura
+
+Application Layer: alta cobertura em Commands, Queries, Handlers e Validators
+
+Alunos.Application → 97%
+
+Conteudo.Application → 98%
+
+Pagamentos.Application → 100%
+
+Domain Layer: regras de negócio e value objects amplamente testados
+
+Conteudo.Domain → 99%
+
+Alunos.Domain → 96%
+
+Cartao (Value Object) → 100%
+
+
+
+⚠️ Observação
+
+Projetos de API (BFF/API) não possuem cobertura unitária por serem composition root (Program, middlewares, Swagger). A cobertura adequada nesses módulos é feita via testes de integração, fora do escopo desta entrega.
+
+
+
+✅ A meta de 80% de Branch Coverage foi atingida e superada.
 
 
 ## 🧩 Building Blocks

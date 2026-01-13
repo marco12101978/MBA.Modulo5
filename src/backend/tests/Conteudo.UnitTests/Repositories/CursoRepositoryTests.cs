@@ -3,7 +3,9 @@ using Conteudo.Domain.ValueObjects;
 using Conteudo.Infrastructure.Data;
 using Conteudo.Infrastructure.Repositories;
 using Conteudo.UnitTests.Repositories.Infra;
+using Core.Communication.Filters;
 using Microsoft.Data.Sqlite;
+using System.Reflection;
 
 namespace Conteudo.UnitTests.Repositories;
 
@@ -26,6 +28,26 @@ public class CursoRepositoryTests : IDisposable
 
     private Curso NovoCurso(string nome = "Curso A", Guid? cat = null)
         => new(nome, 100, VO(), 10, "Básico", "Instrutor", 20, "", null, cat);
+
+    private static Curso NovoCurso(string nome, bool ativo)
+    {
+        // Ajuste para o teu factory/ctor real
+        var curso = new Curso(
+            nome: nome,
+            valor: 100m,
+            conteudoProgramatico: new ConteudoProgramatico("Resumo é obrigatório", "Descrição é obrigatória", "Objetivos são obrigatórios", "","","","","",""),
+            duracaoHoras: 10,
+            nivel: "Básico",
+            instrutor: "Instrutor",
+            vagasMaximas: 10,
+            imagemUrl: "http://img",
+            validoAte: null,
+            categoriaId: null
+        );
+
+        SetAtivo(curso, ativo);
+        return curso;
+    }
 
     [Fact]
     public async Task Adicionar_ObterPorId_includeAulas_e_Deletar_devem_funcionar()
@@ -79,6 +101,66 @@ public class CursoRepositoryTests : IDisposable
         (await _repo.ExistePorNomeAsync("Nome Único A")).Should().BeTrue();
         (await _repo.ExistePorNomeAsync("Nome Único A", excludeId: c1.Id)).Should().BeFalse();
     }
+
+    [Fact]
+    public async Task ObterTodosAsync_filter_deve_filtrar_por_query_e_ativos()
+    {
+        var ativoMatch = NovoCurso(GerarNomeCursoUnico("Curso Clean") , ativo: true);
+        var ativoNoMatch = NovoCurso(GerarNomeCursoUnico("Outro Nome"), ativo: true);
+        var inativoMatch = NovoCurso(GerarNomeCursoUnico("Clean Architecture 2"), ativo: false);
+
+        _ctx.Cursos.AddRange(ativoMatch, ativoNoMatch, inativoMatch);
+        await _ctx.SaveChangesAsync();
+
+        var filter = new CursoFilter
+        {
+            PageIndex = 1,
+            PageSize = 10,
+            Query = "Clean",
+            Ativos = true,
+            IncludeAulas = false
+        };
+
+        var res = await _repo.ObterTodosAsync(filter);
+
+        res.Items.Should().ContainSingle();
+        res.Items.Single().Id.Should().Be(ativoMatch.Id);
+    }
+
+    [Fact]
+    public async Task ObterTodosAsync_filter_sem_query_deve_retornar_todos_quando_ativos_false()
+    {
+        _ctx.Cursos.AddRange(NovoCurso("A", ativo: true), NovoCurso("B", ativo: false));
+        await _ctx.SaveChangesAsync();
+
+        var filter = new CursoFilter
+        {
+            PageIndex = 1,
+            PageSize = 10,
+            Query = null,
+            Ativos = false,
+            IncludeAulas = false
+        };
+
+        var res = await _repo.ObterTodosAsync(filter);
+
+        res.Items.Should().HaveCount(2);
+    }
+
+    private static void SetAtivo(Curso curso, bool ativo)
+    {
+        var prop = typeof(Curso).GetProperty(nameof(Curso.Ativo), BindingFlags.Instance | BindingFlags.Public);
+        var setter = prop!.GetSetMethod(nonPublic: true);
+        setter!.Invoke(curso, new object[] { ativo });
+    }
+
+    private static string GerarNomeCursoUnico(string? prefixo = null)
+    {
+        prefixo ??= "Curso";
+
+        return $"{prefixo} - {Guid.NewGuid():N}".Substring(0, 40);
+    }
+
 
     public void Dispose() => _conn.Dispose();
 }
