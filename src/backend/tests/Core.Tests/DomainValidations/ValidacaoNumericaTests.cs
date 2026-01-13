@@ -47,4 +47,23 @@ public class ValidacaoNumericaTests
 
         r.Invoking(x => x.DispararExcecaoDominioSeInvalido()).Should().Throw<Exception>();
     }
+
+    [Theory]
+    [InlineData((byte)0)]
+    public void MaiorQueZero_byte_deve_falhar_em_zero(byte v)
+    {
+        var r = new ResultadoValidacao<Dummy>();
+        ValidacaoNumerica.DeveSerMaiorQueZero(v, "byte <= 0", r);
+
+        r.Invoking(x => x.DispararExcecaoDominioSeInvalido()).Should().Throw<Exception>();
+    }
+
+    [Fact]
+    public void MaiorQueZero_short_deve_passar_em_positivo()
+    {
+        var r = new ResultadoValidacao<Dummy>();
+        ValidacaoNumerica.DeveSerMaiorQueZero((short)1, "short <= 0", r);
+
+        r.Invoking(x => x.DispararExcecaoDominioSeInvalido()).Should().NotThrow();
+    }
 }
