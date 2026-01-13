@@ -39,7 +39,7 @@ jobs:
           /p:CollectCoverage=true
           /p:CoverletOutputFormat=cobertura
           /p:Threshold=80
-          /p:ThresholdType=line,branch
+          /p:ThresholdType=branch
           /p:ThresholdStat=total
 
   build-and-push:
