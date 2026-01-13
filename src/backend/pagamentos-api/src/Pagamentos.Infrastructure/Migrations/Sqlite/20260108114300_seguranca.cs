@@ -1,11 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Pagamentos.Infrastructure.Migrations.Sqlite
 {
     /// <inheritdoc />
-    public partial class seguranca : Migration
+    public partial class Seguranca : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
