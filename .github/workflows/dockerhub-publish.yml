@@ -26,20 +26,20 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore (.NET)
-        run: dotnet restore ./src/backend/MBA.Modulo4.sln
+        run: dotnet restore ./src/backend/MBA.Modulo5.sln
 
       - name: Build (.NET)
-        run: dotnet build ./src/backend/MBA.Modulo4.sln --no-restore -c Release
+        run: dotnet build ./src/backend/MBA.Modulo5.sln --no-restore -c Release
 
       - name: Test (.NET) + Coverage (min 80% lines)
         run: >
-          dotnet test ./src/backend/MBA.Modulo4.sln
+          dotnet test ./src/backend/MBA.Modulo5.sln
           --no-build -c Release
           --logger "trx;LogFileName=test-results.trx"
           /p:CollectCoverage=true
           /p:CoverletOutputFormat=cobertura
           /p:Threshold=80
-          /p:ThresholdType=line
+          /p:ThresholdType=line,branch
           /p:ThresholdStat=total
 
   build-and-push:
