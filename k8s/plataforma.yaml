@@ -57,6 +57,7 @@ spec:
       containers:
         - name: sqlserver
           image: mcr.microsoft.com/mssql/server:2022-latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 1433
           env:
@@ -133,6 +134,7 @@ spec:
       containers:
         - name: rabbitmq
           image: rabbitmq:3-management
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5672
             - containerPort: 15672
@@ -209,6 +211,7 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 6379
           args: ["--appendonly", "yes"]
@@ -260,6 +263,7 @@ spec:
       containers:
         - name: auth-api
           image: lelloimp/plataforma-auth-api:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5001
           env:
@@ -271,7 +275,7 @@ spec:
             - name: ASPNETCORE_URLS
               value: "http://+:5001"
             - name: ConnectionStrings__DefaultConnection
-              value: "Server=sqlserver;Database=AuthDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+              value: "Server=sqlserver;Database=AuthDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=False;"
             - name: SA_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -354,6 +358,7 @@ spec:
       containers:
         - name: conteudo-api
           image: lelloimp/plataforma-conteudo-api:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5002
             - containerPort: 7002
@@ -371,7 +376,7 @@ spec:
                   name: plataforma-secrets
                   key: SA_PASSWORD
             - name: ConnectionStrings__DefaultConnection
-              value: "Server=sqlserver;Database=ConteudoDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+              value: "Server=sqlserver;Database=ConteudoDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=False;"
             - name: JwtSettings__SecretKey
               valueFrom:
                 secretKeyRef:
@@ -446,6 +451,7 @@ spec:
       containers:
         - name: alunos-api
           image: lelloimp/plataforma-alunos-api:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5003
             - containerPort: 7003
@@ -463,7 +469,7 @@ spec:
                   name: plataforma-secrets
                   key: SA_PASSWORD
             - name: ConnectionStrings__DefaultConnection
-              value: "Server=sqlserver;Database=AlunosDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+              value: "Server=sqlserver;Database=AlunosDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=False;"
             - name: JwtSettings__SecretKey
               valueFrom:
                 secretKeyRef:
@@ -540,6 +546,7 @@ spec:
       containers:
         - name: pagamentos-api
           image: lelloimp/plataforma-pagamentos-api:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5004
             - containerPort: 7004
@@ -557,7 +564,7 @@ spec:
                   name: plataforma-secrets
                   key: SA_PASSWORD
             - name: ConnectionStrings__DefaultConnection
-              value: "Server=sqlserver;Database=PagamentosDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=True;"
+              value: "Server=sqlserver;Database=PagamentosDB;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=False;"
             - name: JwtSettings__SecretKey
               valueFrom:
                 secretKeyRef:
@@ -632,6 +639,7 @@ spec:
       containers:
         - name: bff-api
           image: lelloimp/plataforma-bff-api:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
             - containerPort: 7000
@@ -728,6 +736,7 @@ spec:
       containers:
         - name: frontend
           image: lelloimp/plataforma-frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           env:
